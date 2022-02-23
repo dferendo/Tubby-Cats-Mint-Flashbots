@@ -45,6 +45,8 @@ async function main() {
     const provider = new providers.InfuraProvider(Number(process.env.CHAIN_ID), process.env.INFURA_API_KEY);
     const wallet = new Wallet(process.env.PRIVATE_KEY as string, provider);
     const flashbotsProvider = await FlashbotsBundleProvider.create(provider, wallet);
+
+    let contract = new ethers.Contract(contractAddress, tubbiesABIs, provider);
     
     // Sleep until sale starts
     const currentTimestamp = new Date().getTime();
@@ -74,8 +76,6 @@ async function main() {
     };
 
     sendBundle(flashbotsProvider, wallet, tx, latestBlock + 1);
-
-    let contract = new ethers.Contract(contractAddress, tubbiesABIs, provider);
     
     // tx might not be included or the block wasnt mined by an MEV miner
     provider.on('block', async (blockNumber) => {
