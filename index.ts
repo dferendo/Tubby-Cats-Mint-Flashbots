@@ -14,8 +14,9 @@ const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 const GWEI = BigNumber.from(10).pow(9)
 const PRIORITY_FEE = GWEI.mul(3)
 const maxFeeForBlocksInTheFuture = 10;
+const maxFeeWillingToPay = BigNumber.from(150000000000);
 
-const saleStartTimeTimestamp = 1645634753;
+const saleStartTimeTimestamp = 1645634753000;
 const contractAddress = "0xCa7cA7BcC765F77339bE2d648BA53ce9c8a262bD";
 
 async function sendBundle(flashbotsProvider, wallet, tx, targetBlock) {
@@ -41,18 +42,25 @@ async function sendBundle(flashbotsProvider, wallet, tx, targetBlock) {
 }
 
 async function main() {
-    const provider = new providers.InfuraProvider(Number(process.env.CHAIN_ID));
+    const provider = new providers.InfuraProvider(Number(process.env.CHAIN_ID), process.env.INFURA_API_KEY);
     const wallet = new Wallet(process.env.PRIVATE_KEY as string, provider);
-    const flashbotsProvider = await FlashbotsBundleProvider.create(provider, wallet, process.env.FLASTBOTS_RELAY_ENDPOINT, Number(process.env.CHAIN_ID));
+    const flashbotsProvider = await FlashbotsBundleProvider.create(provider, wallet);
     
     // Sleep until sale starts
-    const currentTimestamp = Math.floor(new Date().getTime() / 1000) 
-    await delay(saleStartTimeTimestamp - currentTimestamp)
+    const currentTimestamp = new Date().getTime();
+    const timeToWait = saleStartTimeTimestamp - currentTimestamp;
+    console.log(`Time to wait ${(timeToWait / (1000 * 60 * 60)).toFixed(1)} hours or ${(timeToWait / (1000 * 60)).toFixed(1)} minutes`);
+    await delay(timeToWait)
     
     // If the timestamp is passed, the next block will be accepted
     const latestBlock = await provider.getBlockNumber();
     const block = await provider.getBlock(latestBlock);
-    const maxBaseFeeInFutureBlock = FlashbotsBundleProvider.getMaxBaseFeeInFutureBlock(BigNumber.from(block.baseFeePerGas), maxFeeForBlocksInTheFuture);
+    var maxBaseFeeInFutureBlock = FlashbotsBundleProvider.getMaxBaseFeeInFutureBlock(BigNumber.from(block.baseFeePerGas), maxFeeForBlocksInTheFuture);
+
+    // This is useless, you can just use maxFeeWillingToPay since the gas will be refunded
+    if (maxBaseFeeInFutureBlock > maxFeeWillingToPay) {
+        maxBaseFeeInFutureBlock = maxFeeWillingToPay;
+    }
 
     const tx = {
         to: contractAddress,
@@ -64,6 +72,8 @@ async function main() {
         maxFeePerGas: PRIORITY_FEE.add(maxBaseFeeInFutureBlock),
         maxPriorityFeePerGas: PRIORITY_FEE
     };
+
+    console.log(maxBaseFeeInFutureBlock.toString())
 
     sendBundle(flashbotsProvider, wallet, tx, latestBlock + 1);
 
