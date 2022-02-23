@@ -75,7 +75,7 @@ async function main() {
         maxPriorityFeePerGas: PRIORITY_FEE
     };
 
-    sendBundle(flashbotsProvider, wallet, tx, latestBlock + 1);
+    await sendBundle(flashbotsProvider, wallet, tx, latestBlock + 1);
     
     // tx might not be included or the block wasnt mined by an MEV miner
     provider.on('block', async (blockNumber) => {
@@ -87,7 +87,7 @@ async function main() {
         }
         console.log(`Current supply ${currentSupply.toString()}. Re-trying on block ${blockNumber}`);
         // Re-try to following blocks 
-        sendBundle(flashbotsProvider, wallet, tx, blockNumber + 1);
+        await sendBundle(flashbotsProvider, wallet, tx, blockNumber + 1);
     });
 }
 
