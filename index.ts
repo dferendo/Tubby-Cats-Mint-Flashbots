@@ -20,7 +20,7 @@ const saleStartTimeTimestamp = 1645634753000;
 const contractAddress = "0xCa7cA7BcC765F77339bE2d648BA53ce9c8a262bD";
 
 async function sendBundle(flashbotsProvider, wallet, tx, targetBlock) {
-    // Send transaction to target the next block
+    // Send transaction to target the specified block
     const bundleSubmission = await flashbotsProvider.sendBundle([ {
         signer: wallet,
         transaction: tx
@@ -72,8 +72,6 @@ async function main() {
         maxFeePerGas: PRIORITY_FEE.add(maxBaseFeeInFutureBlock),
         maxPriorityFeePerGas: PRIORITY_FEE
     };
-
-    console.log(maxBaseFeeInFutureBlock.toString())
 
     sendBundle(flashbotsProvider, wallet, tx, latestBlock + 1);
 
